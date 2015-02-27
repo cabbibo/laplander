@@ -1,3 +1,4 @@
+uniform mat4 iModelMat;
 
 attribute vec3 tangent;
 
@@ -11,6 +12,7 @@ varying vec2 vUv;
 
 varying vec3 vEye;
 varying vec3 vMPos;
+varying vec3 vPos;
 
 $matInverse
 
@@ -23,8 +25,8 @@ void main(){
   vNorm = normal;
   vTang = tangent;
   
-  //vNorm = normalMatrix * normal;
-  //vTang = normalMatrix * tangent;
+  vNorm = normal;
+  vTang = tangent;
 
   vBino = cross( vNorm , vTang );
 
@@ -38,8 +40,13 @@ void main(){
   vINormMat = matInverse( normMat );
 
   vMPos = ( modelMatrix * vec4( pos , 1. ) ).xyz;
-  vEye = normalize( cameraPosition - vMPos );
+  //vMPos = pos.xyz;
+
+  vec3 iCamPos = ( iModelMat * vec4( cameraPosition , 1. ) ).xyz;
+  vEye = iCamPos - pos;
+  vPos = pos;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4( pos , 1. );
+
 
 }
