@@ -11,6 +11,7 @@
     <script src="lib/three.min.js">             </script>
     <script src="lib/jquery.min.js">            </script>
     <script src="lib/TrackballControls.js">     </script>
+    <script src="lib/stats.min.js">             </script>
     
     <script src="lib/ShaderLoader.js"></script>
 
@@ -33,6 +34,7 @@
 
       var geometry, material , light;
 
+      var stats;
 
       var shaders = new ShaderLoader( 'shaders' );
 
@@ -80,18 +82,49 @@
         renderer.setSize( window.innerWidth, window.innerHeight );
 
         document.body.appendChild( renderer.domElement );
+        stats = new Stats();
+        stats.domElement.style.position = "absolute";
+        stats.domElement.style.left = "0px";
+        stats.domElement.style.bottom = "0px";
+        stats.domElement.style.zIndex = "999";
+        document.body.appendChild( stats.domElement );
+
+        
+      // Making sure our renderer is always the right size
+      window.addEventListener( 'resize', onWindowResize , false );
+   
+
 
       }
 
       function animate(){
 
-       // mesh.rotation.x += .01;
-       // mesh.rotation.y += .0073;
-       // mesh.rotation.z += .023;
         requestAnimationFrame( animate );
+        stats.update();
         controls.update();
         renderer.render( scene , camera );
       }
+
+
+
+      // Resets the renderer to be the proper size
+      function onWindowResize(){
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+       
+        var dpr = devicePixelRatio || 1;
+
+        //camUniforms.SS.value.x = window.innerWidth * dpr;
+        //camUniforms.SS.value.y = window.innerHeight * dpr;
+
+
+      }
+
+
 
     </script>
 
