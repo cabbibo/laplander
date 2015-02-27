@@ -1,0 +1,99 @@
+<html>
+
+  <head>
+    <style>
+      body{ margin: 0px; }
+    </style>
+  </head>
+
+  <body>
+
+    <script src="lib/three.min.js">             </script>
+    <script src="lib/jquery.min.js">            </script>
+    <script src="lib/TrackballControls.js">     </script>
+    
+    <script src="lib/ShaderLoader.js"></script>
+
+    <script>
+
+
+
+      var matcap = THREE.ImageUtils.loadTexture('img/rough-aluminium.jpg');
+
+      var uniforms = {
+
+        t_matcap:{ type:"t" , value: matcap },
+        stepDepth:{ type:"f" , value: .03 }
+
+      }
+
+      var camera, renderer, scene , controls;
+      
+      var vs, fs;
+
+      var geometry, material , light;
+
+
+      var shaders = new ShaderLoader( 'shaders' );
+
+      shaders.shaderSetLoaded = function(){
+        init();
+        animate();
+      }
+
+      shaders.load( 'vs-bifrost' , 'bifrost' , 'vertex' );
+      shaders.load( 'fs-bifrost' , 'bifrost' , 'fragment' );
+
+      function init(){
+
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        camera = new THREE.PerspectiveCamera( 65 , w/h , .1 , 100 );
+        camera.position.z = 2;
+
+        controls = new THREE.TrackballControls( camera );
+        scene = new THREE.Scene();
+
+        geometry = new THREE.PlaneGeometry( 1, 1 );
+        //geometry = new THREE.BoxGeometry( 1, 1,1 );
+        //geometry = new THREE.IcosahedronGeometry( 1,4 );
+       // geometry.computeVertexNormals();
+        geometry.computeTangents();
+
+        console.log( geometry );
+          
+        material = new THREE.ShaderMaterial({
+
+          uniforms:       uniforms,
+          vertexShader:   shaders.vertexShaders.bifrost,
+          fragmentShader: shaders.fragmentShaders.bifrost,
+          side: THREE.DoubleSide,
+          transparent: true
+
+        });
+       
+        mesh = new THREE.Mesh( geometry, material );
+        scene.add( mesh );
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        document.body.appendChild( renderer.domElement );
+
+      }
+
+      function animate(){
+
+       // mesh.rotation.x += .01;
+       // mesh.rotation.y += .0073;
+       // mesh.rotation.z += .023;
+        requestAnimationFrame( animate );
+        controls.update();
+        renderer.render( scene , camera );
+      }
+
+    </script>
+
+  </body>
+</html>
