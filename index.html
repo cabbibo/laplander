@@ -12,7 +12,14 @@
     <script src="lib/jquery.min.js">            </script>
     <script src="lib/TrackballControls.js">     </script>
     <script src="lib/stats.min.js">             </script>
+    <script src="lib/underscore.js">             </script>
     
+    <script src="lib/AudioController.js">       </script>
+    <script src="lib/AudioTexture.js">       </script>
+    <script src="lib/Stream.js">       </script>
+    <script src="lib/UserAudio.js">       </script>
+   
+
     <script src="lib/ShaderLoader.js"></script>
 
     <script>
@@ -20,11 +27,15 @@
 
 
       var matcap = THREE.ImageUtils.loadTexture('img/rough-aluminium.jpg');
+      var text = THREE.ImageUtils.loadTexture('img/easyFun.png');
 
       var uniforms = {
 
         t_matcap:{ type:"t" , value: matcap },
-        stepDepth:{ type:"f" , value: .03 },
+        t_text:{type:"t", value:text},
+        t_audio:{type:"t",value:null},
+        stepDepth:{ type:"f" , value: .004 },
+        oscillationSize:{ type:"f" , value: 300. },
         lightPos:{ type:"v3" , value: new THREE.Vector3( 2 , 0 , 0 ) },
         iModelMat:{ type:"m4" , value: new THREE.Matrix4() }
 
@@ -44,10 +55,26 @@
       shaders.shaderSetLoaded = function(){
         init();
         animate();
+        //stream.play();
       }
 
       shaders.load( 'vs-bifrost' , 'bifrost' , 'vertex' );
       shaders.load( 'fs-bifrost' , 'bifrost' , 'fragment' );
+
+      var audioController = new AudioController();
+      audioController.mute.gain.value = 0;
+      //var stream = new Stream(  'laplander.mp3',audioController  );
+     
+      uniforms.t_audio.value = audioController.texture; 
+      var userAudio = new UserAudio( audioController );
+      userAudio.onStreamCreated = function(){
+
+        console.log('asds');
+        //onLoad();
+
+      }
+
+
 
       function init(){
 
@@ -60,7 +87,7 @@
         controls = new THREE.TrackballControls( camera );
         scene = new THREE.Scene();
 
-        geometry = new THREE.PlaneGeometry( 10, 10 );
+        geometry = new THREE.PlaneGeometry( 1, 1 );
        // geometry = new THREE.BoxGeometry( 1, 1,1 );
         //geometry = new THREE.IcosahedronGeometry( 1,4 );
        // geometry.computeVertexNormals();
@@ -74,14 +101,12 @@
           vertexShader:   shaders.vertexShaders.bifrost,
           fragmentShader: shaders.fragmentShaders.bifrost,
           side: THREE.DoubleSide,
-          //transparent: true
+          transparent: true
 
         });
        
         mesh = new THREE.Mesh( geometry, material );
-        mesh.position.x = Math.random();
-        mesh.position.y = Math.random();
-        mesh.position.z = Math.random();
+     
         scene.add( mesh );
 
        
@@ -105,6 +130,8 @@
       }
 
       function animate(){
+
+        audioController.update();
 
         //mesh.rotation.y += .007 //* Math.sin((i +3)* 20.);
         //mesh.rotation.x += .0059 //* Math.sin((i +3)* 20.);
