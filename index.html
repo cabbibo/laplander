@@ -22,6 +22,8 @@
 
     <script src="lib/ShaderLoader.js"></script>
 
+    <script src="Hologram.js"></script>
+
     <script>
 
 
@@ -34,10 +36,9 @@
         t_matcap:{ type:"t" , value: matcap },
         t_text:{type:"t", value:text},
         t_audio:{type:"t",value:null},
-        stepDepth:{ type:"f" , value: .004 },
-        oscillationSize:{ type:"f" , value: 300. },
+        stepDepth:{ type:"f" , value: .03 },
+        oscillationSize:{ type:"f" , value: 30. },
         lightPos:{ type:"v3" , value: new THREE.Vector3( 2 , 0 , 0 ) },
-        iModelMat:{ type:"m4" , value: new THREE.Matrix4() }
 
       }
 
@@ -55,25 +56,29 @@
       shaders.shaderSetLoaded = function(){
         init();
         animate();
-        //stream.play();
+        stream.play();
       }
 
       shaders.load( 'vs-bifrost' , 'bifrost' , 'vertex' );
       shaders.load( 'fs-bifrost' , 'bifrost' , 'fragment' );
 
+      shaders.load( 'vs-hologram' , 'hologram' , 'vertex' );
+      shaders.load( 'fs-hologram' , 'hologram' , 'fragment' );
+
       var audioController = new AudioController();
-      audioController.mute.gain.value = 0;
-      //var stream = new Stream(  'laplander.mp3',audioController  );
+     // audioController.mute.gain.value = 0;
+      var stream = new Stream(  'laplander.mp3',audioController  );
      
       uniforms.t_audio.value = audioController.texture; 
-      var userAudio = new UserAudio( audioController );
+      /*var userAudio = new UserAudio( audioController );
       userAudio.onStreamCreated = function(){
 
         console.log('asds');
         //onLoad();
 
-      }
+      }*/
 
+      var title;
 
 
       function init(){
@@ -81,35 +86,62 @@
         var w = window.innerWidth;
         var h = window.innerHeight;
 
-        camera = new THREE.PerspectiveCamera( 65 , w/h , .1 , 100 );
-        camera.position.z = 2;
+        camera = new THREE.PerspectiveCamera( 65 , w/h , .01 , 100 );
+        camera.position.z = .001;
 
         controls = new THREE.TrackballControls( camera );
         scene = new THREE.Scene();
 
         geometry = new THREE.PlaneGeometry( 1, 1 );
-       // geometry = new THREE.BoxGeometry( 1, 1,1 );
-        //geometry = new THREE.IcosahedronGeometry( 1,4 );
-       // geometry.computeVertexNormals();
         geometry.computeTangents();
 
-        console.log( geometry );
-          
-        material = new THREE.ShaderMaterial({
-
-          uniforms:       uniforms,
-          vertexShader:   shaders.vertexShaders.bifrost,
-          fragmentShader: shaders.fragmentShaders.bifrost,
-          side: THREE.DoubleSide,
-          transparent: true
-
-        });
        
-        mesh = new THREE.Mesh( geometry, material );
-     
-        scene.add( mesh );
 
-       
+        var dir = [
+
+          [1,0,0],
+          [-1,0,0],
+          [0,1,0],
+          [0,-1,0],
+          [0,0,1],
+          [0,0,-1],
+
+        ];
+
+        for( var i = 0; i < dir.length; i++ ){
+
+          var m = Hologram( 
+              geometry, 
+              uniforms,
+              shaders.vertexShaders.hologram,
+              shaders.fragmentShaders.hologram
+           );
+
+          m.position.x = dir[i][0]*.5; 
+          m.position.y = dir[i][1]*.5; 
+          m.position.z = dir[i][2]*.5; 
+ 
+          m.lookAt( new THREE.Vector3() );
+          scene.add( m );
+          meshes.push( m );
+
+
+        }
+
+        title = Hologram( 
+            geometry, 
+            uniforms,
+            shaders.vertexShaders.bifrost,
+            shaders.fragmentShaders.bifrost,
+            true
+         );
+
+        title.scale.multiplyScalar( .3 );
+
+        title.position.z = -.2;
+
+        scene.add( title );  
+
         renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -117,7 +149,7 @@
         stats = new Stats();
         stats.domElement.style.position = "absolute";
         stats.domElement.style.left = "0px";
-        stats.domElement.style.bottom = "0px";
+        stats.domElement.style.bottom = "-30px";
         stats.domElement.style.zIndex = "999";
         document.body.appendChild( stats.domElement );
 
@@ -132,21 +164,20 @@
       function animate(){
 
         audioController.update();
+        controls.update();
 
-        //mesh.rotation.y += .007 //* Math.sin((i +3)* 20.);
-        //mesh.rotation.x += .0059 //* Math.sin((i +3)* 20.);
-        //mesh.rotation.z += .0063 //* Math.sin((i +3)* 20.);
+        title.rotation.y += .007 //* Math.sin((i +3)* 20.);
+        title.rotation.x += .0059 //* Math.sin((i +3)* 20.);
+        title.rotation.z += .0063 //* Math.sin((i +3)* 20.);
 
-        mesh.updateMatrixWorld();
-        mesh.material.uniforms.iModelMat.value.getInverse( mesh.matrixWorld );
-        /*for( var i = 0; i < meshes.length; i++ ){
-          meshes[i].rotation.y += .01 * Math.sin((i +3)* 20.);
-          meshes[i].rotation.x += .01 * Math.sin((i +9.62) * 30.);
-          meshes[i].rotation.z += .01 * Math.sin( (i +102.) * 40.);
-        }*/
+        for( var i = 0; i < meshes.length; i++ ){
+          meshes[i].update();
+        }
+
+        title.update();
+
         requestAnimationFrame( animate );
         stats.update();
-        controls.update();
         renderer.render( scene , camera );
       }
 
